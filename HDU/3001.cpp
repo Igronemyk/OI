@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <iostream>
+#include <cstring>
 
 using namespace std;
 
@@ -15,16 +16,16 @@ int myPow(int a,int b){
     return result;
 }
 
+int graph[10][10],visit[59049][10],dp[10][59049];
+
+
+
 int main(){
-    printf("%d\n",myPow(3,10));
-    /*
     int n,m;
     while(~scanf("%d%d",&n,&m)){
-        int **graph = new int*[n];
-        for(int i = 0;i < n;i++){
-            graph[i] = new int[n];
-            fill(graph[i],graph[i] + n,INF);
-        }
+        memset(graph,INF,sizeof(graph));
+        memset(visit,0,sizeof(visit));
+        memset(dp,INF,sizeof(dp));
         for(int i = 0;i < m;i++){
             int from,to,weight;
             scanf("%d%d%d",&from,&to,&weight);
@@ -32,15 +33,8 @@ int main(){
             graph[from][to] = min(graph[from][to],weight);
             graph[to][from] = min(graph[to][from],weight);
         }
-        int **dp = new int*[n];
         int maxState = myPow(3,n);
-        for(int i = 0;i < n;i++){
-            dp[i] = new int[maxState];
-            fill(dp[i],dp[i] + maxState,INF);
-        }
-        int **visit = new int*[maxState];
         for(int i = 0;i < maxState;i++){
-            visit[i] = new int[n];
             int tmpState = i,index = 0;
             while(tmpState){
                 visit[i][index++] = tmpState % 3;
@@ -67,6 +61,5 @@ int main(){
         }
         printf("%d\n",ans == INF ? -1 : ans);
     }
-    */
     return 0;
 }
