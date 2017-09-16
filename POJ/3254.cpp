@@ -10,12 +10,11 @@ int main(){
     while(~scanf("%d%d",&M,&N)){
         int maxState = 1 << N,stateCount = 0;
         int *state = new int[maxState + 1],*rowState = new int[M];
-        for(int i = 0;i <= maxState;i++){
+        for(int i = 0;i < maxState;i++){
             if(!(i & (i << 1))){
                 state[stateCount++] = i;
             }
         }
-        state[stateCount] = maxState;
         fill(rowState,rowState + M,0);
         for(int i = 0;i < M;i++){
             for(int j = 0;j <N;j++){
