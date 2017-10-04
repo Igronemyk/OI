@@ -24,7 +24,7 @@ int main(){
     int N = read<int>(),K = read<int>();
     value = new int[N];
     for(int i = 0;i < N;i++) value[i] = read<int>();
-    std::sort(value,value + N);
+    std::nth_element(value,value + K - 1,value + N);
     printf("%d\n",value[K - 1]);
     return 0;
 }
