@@ -26,7 +26,7 @@ int myPow(int a,int b){
 string strs[202];
 int kValue[202];
 
-bool visit[64];
+bool visit[1000];
 
 int main(){
     int n;

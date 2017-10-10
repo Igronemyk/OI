@@ -15,17 +15,20 @@ T read(){
 
 
 int main(){
-    int *nowTimes = new int[3];
+    double *nowTimes = new double[3];
     nowTimes[0] = read<int>();
     nowTimes[1] = read<int>();
     nowTimes[2] = read<int>();
     nowTimes[0] *= 5;
+    if(nowTimes[0] == 60) nowTimes[0] = 0;
+    nowTimes[0] += (nowTimes[1] * 60 + nowTimes[2]) / 3600;
+    nowTimes[1] += (nowTimes[2]) / 60;
     sort(nowTimes,nowTimes + 3);
-    if(nowTimes[1] == 0) nowTimes[1] = 60;
-    if(nowTimes[2] == 0) nowTimes[2] = 60;
     int timeA = read<int>(),timeB = read<int>();
     timeA *= 5;
     timeB *= 5;
+    if(timeA == 60) timeA = 0;
+    if(timeB == 60) timeB = 0;
     int rangeA = 3,rangeB = 3;
     if(timeA >= nowTimes[0] &&timeA <= nowTimes[1]){
         rangeA = 1;

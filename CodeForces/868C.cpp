@@ -13,6 +13,7 @@ T read(){
 }
 
 bool visit[16];
+int countTimes[16];
 
 int main(){
     int n = read<int>(),m = read<int>();
@@ -23,13 +24,14 @@ int main(){
             tmpValue += (read<int>() == 0) ? 0 : (1 << j);
         }
         visit[tmpValue] = true;
+        countTimes[tmpValue]++;
     }
     bool solve = false;
     for(int i = 0;i < stateCount;i++){
         if(!visit[i]) continue;
         for(int j = 0;j < stateCount;j++){
             if(!visit[j]) continue;
-            if(i == j) continue;
+            if(i == j && countTimes[i] == 1) continue;
             if((i & j) == 0){
                 solve = true;
                 goto outside;
@@ -37,6 +39,7 @@ int main(){
         }
     }
     outside:
+    if(!solve && n == 1 && visit[0]) solve = true;
     printf(solve ? "YES\n" : "NO\n");
     return 0;
 }
