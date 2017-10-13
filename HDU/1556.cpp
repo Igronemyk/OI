@@ -2,7 +2,15 @@
 #include <cstring>
 
 int value[100001];
-\
+
+template<typename T>
+inline T read(){
+    T result = 0;int f = 1;char c = getchar();
+    while(c > '9' || c < '0') {if(c == '-') f *= -1;c = getchar();}
+    while(c <= '9' && c >= '0') {result = result * 10 + c - '0';c = getchar();}
+    return result * f;
+}
+
 
 int main(){
     int N;

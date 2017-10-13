@@ -63,9 +63,10 @@ void dijkstra(){
         pq.pop();
         vis[tmpEdge.to] = true;
         for(int i = graph.head[tmpEdge.to];i != -1;i = graph.nodes[i].next){
-            //printf("Weight value is %d\n",graph.nodes[i].weight);
-            if(dis[graph.nodes[i].to] > dis[tmpEdge.to] + graph.nodes[i].weight) dis[graph.nodes[i].to] = dis[tmpEdge.to] + graph.nodes[i].weight;
-            pq.push(Edge(graph.nodes[i].to,dis[graph.nodes[i].to]));
+            if(dis[graph.nodes[i].to] > dis[tmpEdge.to] + graph.nodes[i].weight){
+                dis[graph.nodes[i].to] = dis[tmpEdge.to] + graph.nodes[i].weight;
+                pq.push(Edge(graph.nodes[i].to,dis[graph.nodes[i].to]));
+            }
         }
     }
 }

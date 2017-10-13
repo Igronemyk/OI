@@ -1,5 +1,8 @@
 #include <cstdio>
 #include <cstring>
+#include <algorithm>
+
+using namespace std;
 
 template<typename T>
 inline T read(){
@@ -22,25 +25,28 @@ namespace Adj{
         memset(heads,-1,sizeof(heads));
     }
 
-    void addEgde(int u,int v){
+    void addEdge(int u,int v){
         nodes[tot].to = v;
         nodes[tot].next = heads[u];
         heads[u] = tot++;
     }
 }
 
+using namespace Adj;
+
 int main(){
     int n = read<int>(),maxResult = 0,result = 0;
+    init();
     for(int i = 0;i < n - 1;i++){
         int u = read<int>(),v = read<int>();
         addEdge(u,v);
-        addEgde(v,u);
+        addEdge(v,u);
     }
-    int *value = new int[n];
-    for(int i = 0;i < n;i++) value[i] = read<int>();
+    int *value = new int[n + 1];
+    for(int i = 1;i <= n;i++) value[i] = read<int>();
     for(int i = 1;i <= n;i++){
         int sumValue = 0,maxValue1,maxValue2,status = 0;
-        for(int j = heads[i];j;j = nodes[j].next){
+        for(int j = heads[i];j != -1;j = nodes[j].next){
             sumValue += value[nodes[j].to];
             if(status == 0){
                 maxValue1 = value[nodes[j].to];
@@ -54,7 +60,7 @@ int main(){
                 }
                 status++;
             }else{
-                int tmpValue = value[ndoes[j].to];
+                int tmpValue = value[nodes[j].to];
                 if(tmpValue > maxValue1){
                     maxValue2 = maxValue1;
                     maxValue1 = tmpValue;
@@ -64,11 +70,11 @@ int main(){
             }
         }
         if(status != 2) continue;
-        for(int j = heads[i];j;j = nodes[j].next){
-
+        for(int j = heads[i];j != -1;j = nodes[j].next){
+            result = (result + value[nodes[j].to] * ((sumValue - value[nodes[j].to]) % MODDER)) % MODDER;
         }
-        sumValue %= MODDER;
-        maxResult = max(maxResult,maxValue1 * maxValue2 % MODDER);
+        maxResult = max(maxResult,maxValue1 * maxValue2);
     }
+    printf("%d %d\n",maxResult,result);
     return 0;
 }
