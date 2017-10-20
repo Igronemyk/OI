@@ -1,33 +1,32 @@
 #include <iostream>
 #include <string>
 #include <algorithm>
-#include <vector>
-
+#include <map>
 
 using namespace std;
 
 int main(){
+    ios::sync_with_stdio(false);
+    cin.tie(0);
     int n;
     cin >> n;
     string s;
     cin >> s;
-    vector<int> pre;
-    int length = n;
-    pre.reserve(length + 1);
-    pre.push_back(0);
-    int result = 0;
-    for(int i = 0;i < length;i++){
-        int nowValue = s[i] - '0';
-        pre.push_back(pre.back() + nowValue);
-        int nowMaxRange = min(i + 1 - pre[i + 1],pre[i + 1]);
-        for(int j = nowMaxRange;j > result;j--){
-            int startPos = i + 1 - j * 2;
-            if(pre[i + 1] - pre[startPos] == j){
-                result = j;
-                break;
-            }
+    int zeroCount = 0,oneCount = 0,result = 0;
+    map<int,int> mp;
+    mp[0] = -1;
+    for(int i = 0;i < n;i++) {
+        if(s[i] == '0') {
+            zeroCount++;
+        }else if(s[i] == '1') {
+            oneCount++;
+        }
+        if(mp.count(oneCount - zeroCount) != 0) {
+            result = max(result,i - mp[oneCount - zeroCount]);
+        }else {
+            mp[oneCount - zeroCount] = i;
         }
     }
-    cout << result * 2 << endl;
+    cout << result << endl;
     return 0;
 }
