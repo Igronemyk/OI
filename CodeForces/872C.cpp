@@ -3,41 +3,30 @@
 
 using namespace std;
 
-int getValue(int n) {
-    int i;
-    int countTimes = 0;
-    for(i = 2;i <= n;i++) {
-        while(n % i == 0) {
-            countTimes++;
-            n /= i;
-            if(countTimes == 2) return n;
-        }
-    }
-    return -1;
-}
+int values[17] = {-1,-1,-1,-1,1,-1,1,-1,2,1,2,-1,3,2,3,2,4};
 
-int main(){
+int main() {
     ios::sync_with_stdio(false);
+    cin.tie(0);
     int q;
     cin >> q;
     while(q--) {
-        int n;
-        cin >> n;
-        int tmpResult = getValue(n);
-        if(tmpResult != -1) {
-            cout << tmpResult << endl;
-            continue;
-        }else{
-            int value = n / 2;
-            int value2 = n - value;
-            while(value <= n && (getValue(value) == -1 || getValue(value2) == -1)) {
-                value++;
-                value2--;
-            }
-            if(value == n + 1) {
-                cout << -1 << endl;
+        int tmpValue;
+        cin >> tmpValue;
+        if(tmpValue <= 16) {
+            cout << values[tmpValue] << endl;
+        }else {
+            if(tmpValue % 4 == 0) {
+                cout << tmpValue / 4 << endl;
             }else {
-                cout << getValue(value) + getValue(value2) << endl;
+                int divValue = tmpValue / 4,modValue = tmpValue % 4;
+                divValue -= 3;
+                int nowValue = 12 + modValue;
+                if(values[nowValue] == -1) {
+                    cout << -1 << endl;
+                }else {
+                    cout << values[nowValue] + divValue << endl;
+                }
             }
         }
     }
