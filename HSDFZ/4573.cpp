@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <climits>
 
 template<typename T>
 T read() {
@@ -8,40 +9,22 @@ T read() {
     return result * f;
 }
 
+const long long INF = LONG_MAX;
+
 int main() {
     int N = read<int>(),K = read<int>();
-    long long *values = new long long[N];
+    long long *values = new long long[N + 1];
     for(int i = 0;i < N;i++) {
         values[i] = read<long long>();
     }
+    values[N] = INF;
+    int left = 0,right = K;
     for(int i = 0;i < N;i++) {
-        int leftPos = i - 1,rightPos = i + 1,nowPos = -1;
-        for(int j = 0;j < K;j++) {
-            if(leftPos < 0) {
-                nowPos = rightPos;
-                rightPos++;
-            }else if(rightPos >= N) {
-                nowPos = leftPos;
-                leftPos--;
-            }else {
-                if(values[i] - values[leftPos] < values[rightPos] - values[i]) {
-                    nowPos = leftPos;
-                    leftPos--;
-                }else if(values[i] - values[leftPos] > values[rightPos] - values[i]){
-                    nowPos = rightPos;
-                    rightPos++;
-                }else {
-                    if(j != K - 1) {
-                        nowPos = rightPos;
-                        rightPos++;
-                    }else {
-                        nowPos = leftPos;
-                        leftPos--;
-                    }
-                }
-            }
+        while(right < N - 1 && values[right + 1] - values[i] < values[i] - values[left]) {
+            left++;
+            right++;
         }
-        printf("%lld",values[nowPos]);
+        printf("%lld",(values[right] - values[i] > values[i] - values[left]) ? values[right] : values[left]);
         if(i != N - 1) printf(" ");
     }
     return 0;
