@@ -1,0 +1,59 @@
+#include <cstdio>
+#include <cstring>
+
+template<typename T>
+T read() {
+    T result = 0;int f = 1;char c = getchar();
+    while(c > '9' || c < '0') {if(c == '-') f *= -1;c = getchar();}
+    while(c <= '9' && c >= '0') {result = result * 10 + c - '0';c = getchar();}
+    return result * f;
+}
+
+template<typename T>
+struct BIT {
+    T *values;
+    int size;
+    BIT(int size) : size(size) {
+        values = new T[size + 1];
+        memset(values,0,sizeof(T) * (size + 1));
+    }
+
+    void update(int pos,T val) {
+        for(int i = pos;i <= size;i += lowbit(i)) {
+            values[i] += val;
+        }
+    }
+
+    T getSum(int pos) {
+        T result = 0;
+        while(pos) {
+            result += values[pos];
+            pos -= lowbit(pos);
+        }
+        return result;
+    }
+
+    int lowbit(int val) {
+        return val & -val;
+    }
+};
+
+
+int main() {
+    int N = read<int>(),M = read<int>();
+    BIT<int> bitree(N);
+    for(int i = 1;i <= N;i++) {
+        bitree.update(i,read<int>());
+    }
+    while(M--) {
+        int opt = read<int>();
+        if(opt == 1) {
+            int x = read<int>(),k = read<int>();
+            bitree.update(x,k);
+        }else {
+            int x = read<int>(),y = read<int>();
+            printf("%d\n",bitree.getSum(y) - bitree.getSum(x - 1));
+        }
+    }
+    return 0;
+}
