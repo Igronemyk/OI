@@ -38,7 +38,7 @@ struct Matrix {
             for(int j = 0;j < newM;j++) {
                 long long tmpValue = 0;
                 for(int k = 0;k < this->M;k++) {
-                    tmpValue += (static_cast<long long>(this->values[i][k]) * otherMatrix.values[k][j]) % MODDER;
+                    tmpValue = (tmpValue + static_cast<long long>(this->values[i][k]) * otherMatrix.values[k][j]) % MODDER;
                 }
                 resultValue[i][j] = tmpValue % MODDER;
             }
@@ -72,6 +72,8 @@ struct Matrix {
 
 };
 
+int values[3][3] = {{1,0,1},{0,1,0},{0,0,1}};
+
 int main() {
     /*
     int **values = new int*[2];
@@ -83,7 +85,6 @@ int main() {
     values[1][0] = 1;
     values[1][1] = 0;
     Matrix<int> m1(2,2,values);
-    */
     int n = read<int>();
     long long k = read<long long>();
     int **values = new int*[n];
@@ -93,8 +94,20 @@ int main() {
             values[i][j] = read<int>();
         }
     }
+    */
+    int n = 3;
+    int **values = new int*[n];
+    for(int i = 0;i < 3;i++) {
+        values[i] = new int[n];
+    }
+    values[0][0] = 1; values[0][1] = 0; values[0][2] = 1; values[1][0] = 1; values[1][1] = 0; values[1][2] = 0; values[2][0] = 0; values[2][1] = 1; values[2][2] = 0;
     Matrix<int> m1(n,n,values);
-    m1 = Matrix<int>::pow(m1,k);
-    m1.print();
+    int T = read<int>();
+    while(T--) {
+        int k = read<int>();
+        Matrix<int> m2 = Matrix<int>::pow(m1,k);
+        printf("%d\n",m2.values[0][2]);
+    }
+    //m1.print();
     return 0;
 }
