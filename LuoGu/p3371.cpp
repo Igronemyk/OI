@@ -71,6 +71,30 @@ void dijkstra(){
     }
 }
 
+void spfa() {
+    memset(vis,false,sizeof(vis));
+    memset(dis,INF,sizeof(dis));
+    queue<int> que;
+    que.push(S);
+    dis[S] = 0;
+    vis[S] = true;
+    while(!que.empty()) {
+        int tmpPoint = que.front();
+        que.pop();
+        vis[tmpPoint] = false;
+        for(int i = graph.head[tmpPoint];i != -1;i = graph.nodes[i].next) {
+            Graph::Node &tmpEdge = graph.nodes[i];
+            if(dis[tmpEdge.to] > dis[tmpPoint] + tmpEdge.weight) {
+                dis[tmpEdge.to] = dis[tmpPoint] + tmpEdge.weight;
+                if(!vis[tmpEdge.to]) {
+                    vis[tmpEdge.to] = true;
+                    que.push(tmpEdge.to);
+                }
+            }
+        }
+    }
+}
+
 int main(){
     N = read<int>();M = read<int>();S = read<int>();
     graph.init();
@@ -78,7 +102,7 @@ int main(){
         int F = read<int>(),G = read<int>(),W = read<int>();
         graph.addEdge(F,G,W);
     }
-    dijkstra();
+    spfa();
     for(int i = 1;i <= N;i++){
         printf("%d ",dis[i] == INF ? 2147483647 : dis[i]);
     }

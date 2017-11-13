@@ -39,11 +39,10 @@ int main(){
         int mid = (left + right) >> 1;
         if(check(dis,mid)){
             left = mid + 1;
-            result = max(result,mid);
         }else{
             right = mid - 1;
         }
     }
-    printf("%d\n",result);
+    printf("%d\n",right);
     return 0;
 }

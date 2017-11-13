@@ -12,48 +12,70 @@ T read() {
     return result * f;
 }
 
-struct ST {
-    int **values;
-    ST(int *val,int length) {
-        values = new int*[length];
-        int calLen = myLog2(length);
-        for(int i = 0;i < length;i++) {
-            values[i] = new int[calLen + 1];
-            values[i][0] = val[i];
-        }
-        for(int j = 1;j <= calLen;j++) {
-            for(int i = 0;i + (1 << j) - 1 < length;i++) {
-                values[i][j] = min(values[i][j - 1],values[i + (1 << (j - 1))][j - 1]);
-            }
-        }
+template<typename T>
+struct Queue {
+    T *values;
+    int head,tail;
+    Queue(int size) {
+        values = new T[size];
+        head = 0;
+        tail = 0;
     }
 
-    int query(int left,int right) {
-        if(left > right) return -1;
-        int logVal = myLog2(right - left + 1);
-        return min(values[left][logVal],values[right - (1 << logVal) + 1][logVal]);
+    void push_back(T val) {
+        values[tail++] = val;
     }
 
-    int myLog2(int val) {
-        return static_cast<int>(log(static_cast<double>(val)) / log(2.0));
+    T front() {
+        return values[head];
+    }
+
+    T back() {
+        return values[tail - 1];
+    }
+
+    void pop_front() {
+        head++;
+    }
+
+    void pop_back() {
+        tail--;
+    }
+
+    void size() {
+        return tail - head;
+    }
+
+    bool isEmpty() {
+        return head == tail;
     }
 };
 
+struct Data {
+    int val,index;
+    Data() : val(-1) , index(-1) { }
+    Data(int val,int index) : val(val) , index(index) { }
+};
+
 int main() {
-    int n = read<int>(),m = read<int>(),*values = new int[n];
+    int n = read<int>(),m = read<int>();
+    Queue<Data> que(n);
     for(int i = 0;i < n;i++) {
-        values[i] = read<int>();
-    }
-    ST stable(values,n);
-    for(int i = 0;i < n;i++) {
-        int endIndex = i - 1;
-        if(endIndex < 0) {
+        if(que.isEmpty()) {
             printf("0\n");
-            continue;
+        }else {
+            printf("%d\n",que.front().val);
         }
-        int beginIndex = i - m;
+        int tmpValue = read<int>();
+        while(!que.isEmpty() && que.back().val >= tmpValue) {
+            que.pop_back();
+        }
+        que.push_back(Data(tmpValue,i));
+        int beginIndex = i - m + 1;
         if(beginIndex < 0) beginIndex = 0;
-        printf("%d\n",stable.query(beginIndex,endIndex));
+        while(!que.isEmpty() && que.front().index < beginIndex) {
+            que.pop_front();
+        }
     }
     return 0;
 }
