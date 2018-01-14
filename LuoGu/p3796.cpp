@@ -60,17 +60,21 @@ struct ACAM {
 
     void build() {
         queue<Node *> que;
+        root->fail = root;
         que.push(root);
         while(!que.empty()) {
             Node *tmpNode = que.front();
             que.pop();
             for(int i = 0;i < MAX_CHILD_SIZE;i++) {
-                if(!tmpNode->hasChild(i)) continue;
+                if(!tmpNode->hasChild(i)) {
+                    tmpNode->childs[i] = tmpNode->fail->childs[i];
+                    continue;
+                }
                 Node *nowNode = tmpNode->getChildWithoutCheck(i),*doing = tmpNode->fail;
-                while(doing != NULL && !doing->hasChild(i)) {
+                while(doing != root && !doing->hasChild(i)) {
                     doing = doing->fail;
                 }
-                if(doing == NULL) {
+                if(doing == root) {
                     nowNode->fail = root;
                 }else {
                     nowNode->fail = doing->getChildWithoutCheck(i);
@@ -87,15 +91,6 @@ struct ACAM {
         memset(result,0,sizeof(int) * size);
         for(string::const_iterator it = s.begin();it != s.end();it++) {
             int index = *it - 'a';
-            bool canContinue = true;
-            while(!doing->hasChild(index)) {
-                if(doing == root) {
-                    canContinue = false;
-                    break;
-                }
-                doing = doing->fail;
-            }
-            if(!canContinue) continue;
             doing = doing->getChildWithoutCheck(index);
             for(vector<int>::iterator it = doing->words.begin();it != doing->words.end();it++) {
                 result[*it]++;
