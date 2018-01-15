@@ -77,7 +77,7 @@ struct Splay {
         now->size = getSize(now->childs[0]) + getSize(now->childs[1]) + 1;
         now->leftMaxValue = max(getLeftMaxValue(now->childs[0]),getSumValue(now->childs[0]) + now->value + getLeftMaxValue(now->childs[1]));
         now->rightMaxValue = max(getRightMaxValue(now->childs[1]),getSumValue(now->childs[1]) + now->value + getRightMaxValue(now->childs[0]));
-        now->maxValue = max(max(getMaxValue(now->childs[0]),getMaxValue(now->childs[1])),getRightMaxValue(now->childs[0]) + now->value + getLeftMaxValue(now->childs[1]));//TODO
+        now->maxValue = max(max(getMaxValue(now->childs[0]),getMaxValue(now->childs[1])),getRightMaxValue(now->childs[0]) + now->value + getLeftMaxValue(now->childs[1]));
         now->sumValue = getSumValue(now->childs[0]) + getSumValue(now->childs[1]) + now->value;
     }
 
@@ -112,20 +112,20 @@ struct Splay {
     }
 
     void rotate(Node *now) {
-        Node *father = now->father,*anc = father->father;
+        Node *father = now->father, *anc = father->father;
         pushDown(father);
         pushDown(now);
-        if(anc != NULL) {
+        if (anc != NULL) {
             anc->childs[anc->childs[1] == father] = now;
         }
+        int direction = father->childs[0] == now;
         now->father = anc;
         father->father = now;
-        int direction = father->childs[0] == now;
         father->childs[!direction] = now->childs[direction];
-        now->childs[direction] = father;
-        if(father->childs[!direction] != NULL) {
+        if (father->childs[!direction] != NULL) {
             father->childs[!direction]->father = father;
         }
+        now->childs[direction] = father;
         if(now->father == NULL) {
             root = now;
         }
@@ -138,13 +138,14 @@ struct Splay {
     }
 
     void splay(Node *now,Node *dist) {
-        if(now == NULL || now == dist) return;
-        while(now->father != dist) {
-            Node *father = now->father,*anc = father->father;
-            if(anc != dist) {
-                if((anc->childs[0] == father) ^(father->childs[0] == now)) {
+        if (now == NULL || now == dist) return;
+        while (now->father != dist) {
+            Node *father = now->father, *anc = father->father;
+            if (anc != dist) {
+                if ((father->childs[0] == now) ^ (anc->childs[0] == father)) {
                     rotate(now);
-                }else {
+                }
+                else {
                     rotate(father);
                 }
             }
@@ -164,12 +165,10 @@ struct Splay {
             updateReverseTag(now->childs[0]);
             updateReverseTag(now->childs[1]);
         }
-        updateInfo(now);
     }
 
     static void updateReverseTag(Node *now) {
         if(now == NULL) return;
-        if(now->changeValue != INF) return;
         now->rev = !now->rev;
         swap(now->childs[0],now->childs[1]);
         swap(now->leftMaxValue,now->rightMaxValue);
@@ -195,6 +194,7 @@ struct Splay {
     Node *getKth(int rank) {
         Node *now = root,*prev = NULL;
         while(now != NULL) {
+            pushDown(now);
             prev = now;
             int leftChildSize = getSize(now->childs[0]);
             if(leftChildSize < rank) {
@@ -217,7 +217,6 @@ struct Splay {
         return root->childs[1]->childs[0];
     }
 
-
     void insert(int x,int *values,int size) {
         splayRange(x + 1,x);
         root->childs[1]->childs[0] = buildTree(root->childs[1],0,size - 1,values);
@@ -228,6 +227,7 @@ struct Splay {
         Node *deletedNode = splayRange(start,start + length - 1);
         root->childs[1]->childs[0] = NULL;
         delete deletedNode;
+        splay(root->childs[1]);
     }
 
     void change(int start,int length,int value) {
@@ -249,8 +249,11 @@ struct Splay {
         return result;
     }
 
-    int getMaxSum() {
-        return getMaxValue(root);
+    int getMaxSum(int left,int right) {
+        Node *distNode = splayRange(left,right);
+        int result = distNode->maxValue;
+        splay(distNode);
+        return result;
     }
 
     static Node *buildTree(int left,int right,int *values) {
@@ -272,22 +275,6 @@ struct Splay {
 
     ~Splay() {
         delete root;
-    }
-
-    void print() {
-        print(root,0);
-        printf("\n");
-    }
-
-    void print(Node *now,int depth) {
-        if(now == NULL) return;
-        pushDown(now);
-        print(now->childs[0],depth + 2);
-        for(int i = 0;i < depth;i++) {
-            printf(" ");
-        }
-        printf("%d\n",now->value,now->leftMaxValue,now->rightMaxValue,now->maxValue);
-        print(now->childs[1],depth + 2);
     }
 
 };
@@ -313,11 +300,13 @@ int main() {
                     values[i] = read<int>();
                 }
                 splay.insert(pos,values,tot);
+                N += tot;
                 break;
             }
             case 1: {
                 int pos = read<int>(),tot = read<int>();
                 splay.remove(pos,tot);
+                N -= tot;
                 break;
             }
             case 2: {
@@ -336,17 +325,9 @@ int main() {
                 break;
             }
             case 5: {
-                printf("%d\n",splay.getMaxSum());
-                splay.print();
-                printf("%d\n",splay.getMaxSum());
+                printf("%d\n",splay.getMaxSum(1,N));
             }
         }
-        /*
-        printf("-----Debug Info Start-----\n");
-        splay.print();
-        printf("%d\n",splay.getMaxSum());
-        printf("-----Debug Info End-----\n");
-        */
     }
     return 0;
 }
