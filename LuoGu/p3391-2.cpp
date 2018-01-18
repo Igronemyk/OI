@@ -69,7 +69,7 @@ struct Treap {
             childs[1] = NULL;
         }
 
-        Node(int value) : value(value) , priority(rand()) , size(1) , rev(false) {
+        Node(int value) : value(value) , priority(rand() % INF) , size(1) , rev(false) {
             childs[0] = NULL;
             childs[1] = NULL;
         }
