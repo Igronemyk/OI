@@ -47,16 +47,23 @@ struct Trie {
     };
 
     Node *root;
+    int sign;
 
-    Trie() {
+    Trie() : sign(0) {
         root = new Node();
     }
 
     int insert(char *str) {
         Node *now = root;
         for(int i = 0;str[i];i++) {
-
+            int index = str[i] - FIRST_CHAR;
+            if(!now->hasChild(index)) {
+                now->childs[index] = new Node();
+            }
+            now = now->childs[index];
         }
+        if(now->sign == -1) now->sign = sign++;
+        return now->sign;
     }
 
 };
@@ -169,39 +176,31 @@ struct Treap {
         DRoot tmp1 = split(root,rank);
         int cnt = min(tmp1.second->size,MAX_PRINT_CNT);
         DRoot tmp2 = split(tmp1.second,cnt);
-        print(tmp2.first,players);
+        int nowPrinted = 0;
+        print(tmp2.first,players,cnt,nowPrinted);
         printf("\n");
         root = merge(tmp1.first,merge(tmp2.first,tmp2.second));
     }
 
-    void print(Node *now,char **players) {
+    void print(Node *now,char **players,int readyToPrint,int &nowPrinted) {
         if(now == NULL) return;
-        print(now->childs[0],players);
-        printf("%s ",players[now->sign]);
-        print(now->childs[1],players);
-    }
-
-    void print() {
-        print(root);
-        printf("\n");
-    }
-
-    void print(Node *now) {
-        if(now == NULL) return;
-        print(now->childs[0]);
-        printf("[%lld,%d] ",now->value,now->uploadTime);
-        print(now->childs[1]);
+        print(now->childs[0],players,readyToPrint,nowPrinted);
+        printf("%s",players[now->sign]);
+        nowPrinted++;
+        if(readyToPrint != nowPrinted) printf(" ");
+        print(now->childs[1],players,readyToPrint,nowPrinted);
     }
 
 };
 
 int main() {
     srand(123456);
-    int n = read<int>();
-    HashTable ht(MAX_PLAYER_SIZE,M1 + 1);
+    int n = read<int>(),*uploadTimes = new int[n];
+    long long *scores = new long long[n];
+    Trie trie;
     Treap treap;
-    char *buffer = new char[BUFFER_SIZE],**players = new char*[MAX_PLAYER_SIZE];
-    memset(players,static_cast<int>(NULL),sizeof(char) * MAX_PLAYER_SIZE);
+    char *buffer = new char[BUFFER_SIZE],**players = new char*[n];
+    fill(players,players + n,static_cast<char *>(NULL));
     int uploadTime = 0;
     while(n--) {
         memset(buffer,0,sizeof(char) * BUFFER_SIZE);
@@ -211,14 +210,17 @@ int main() {
             case '+': {
                 long long score;
                 scanf("%lld",&score);
-                pair<int,pair<int,long long> > result = ht.add(buffer + 1,length - 1,score,uploadTime);
-                treap.insert(score,uploadTime++,result.first);
-                if(result.second.first != -1) {
-                    treap.remove(result.second.second,result.second.first);
+                int sign = trie.insert(buffer + 1);
+                treap.insert(score,uploadTime,sign);
+                if(players[sign] == NULL) {
+                    players[sign] = new char[BUFFER_SIZE];
+                    memset(players[sign],0,sizeof(char) * BUFFER_SIZE);
+                    memcpy(players[sign],buffer + 1,sizeof(char) * (length - 1));
                 }else {
-                    players[result.first] = new char[BUFFER_SIZE];
-                    memcpy(players[result.first],buffer + 1,sizeof(char) * (length - 1));
+                    treap.remove(scores[sign],uploadTimes[sign]);
                 }
+                scores[sign] = score;
+                uploadTimes[sign] = uploadTime++;
                 break;
             }
             case '?': {
@@ -226,13 +228,12 @@ int main() {
                     int tmpRank = read<int>(buffer,1);
                     treap.printResult(tmpRank,players);
                 }else {
-                    pair<int,long long> result = ht.query(buffer + 1,length - 1);
-                    printf("%d\n",treap.rank(result.second,result.first));
+                    int sign = trie.insert(buffer + 1);
+                    printf("%d\n",treap.rank(scores[sign],uploadTimes[sign]));
                 }
                 break;
             }
         }
-        //treap.print();
     }
     return 0;
 }
