@@ -1,10 +1,14 @@
 #include <cstdio>
 #include <algorithm>
 #include <cstring>
-#include <iostream>
+#include <cstddef>
 
 using namespace std;
 
+const int MAX_SPLAY_NODE_SIZE = 1000010;
+const int MAX_SEGMENT_NODE_SIZE = 100010;
+const int MAXN = 50010;
+const int BUFFER_SIZE = 2;
 const int MAX_VAL_RANGE = 1e9;
 
 template<typename T>
@@ -15,331 +19,238 @@ T read() {
     return result * f;
 }
 
+struct SplayNode {
+    int father,ch[2];
+    int value,cnt,size;
+
+    SplayNode() : father(0) , value(0) , cnt(0) , size(0) {
+        ch[0] = 0;
+        ch[1] = 0;
+    }
+
+    void init(int father,int value) {
+        this->father = father;
+        this->value = value;
+        this->cnt = 1;
+        this->size = 1;
+        this->ch[0] = 0;
+        this->ch[1] = 0;
+    }
+
+} n[MAX_SPLAY_NODE_SIZE];
+
+int size = 0,sSize = 0;
+
 struct Splay {
-    struct Node {
-        Node *father,*childs[2];
-        int val,cnt,size;
-        Node() : father(NULL) ,val(-1) , cnt(-1) , size(-1) {
-            childs[0] = NULL;
-            childs[1] = NULL;
-        }
-        Node(Node *father,int val) : father(father) , val(val) , cnt(1) , size(1) {
-            childs[0] = NULL;
-            childs[1] = NULL;
-        }
+    int root;
 
-        ~Node() {
-            if(childs[0] != NULL) {
-                delete childs[0];
-            }
-            if(childs[1] != NULL) {
-                delete childs[1];
-            }
+    Splay() : root(0) { }
+
+    int newNode(int father,int value) {
+        n[++size].init(father,value);
+        return size;
+    }
+
+    void updateInfo(int now) {
+        if(now == 0) return;
+        n[now].size = n[n[now].ch[0]].size + n[n[now].ch[1]].size + n[now].cnt;
+    }
+
+    void rotate(int now) {
+        int father = n[now].father,anc = n[father].father;
+        if(anc != 0) {
+            n[anc].ch[n[anc].ch[1] == father] = now;
         }
-    };
-
-    Node *root;
-
-    Splay() : root(NULL) { }
-
-
-    void rotate(Node *now,int direction) {
-        Node *fa = now->father,*anc = fa->father;
-        now->father = anc;
-        fa->father = now;
-        if(anc != NULL) {
-            anc->childs[anc->childs[1] == fa] = now;
+        int direction = n[father].ch[0] == now;
+        n[now].father = anc;
+        n[father].father = now;
+        n[father].ch[!direction] = n[now].ch[direction];
+        n[now].ch[direction] = father;
+        if(n[father].ch[!direction] != 0) {
+            n[n[father].ch[!direction]].father = father;
         }
-        fa->childs[!direction] = now->childs[direction];
-        if(fa->childs[!direction] != NULL) {
-            fa->childs[!direction]->father = fa;
-        }
-        now->childs[direction] = fa;
-        if(root == fa) {
+        updateInfo(father);
+        updateInfo(now);
+        if(n[now].father == 0) {
             root = now;
         }
-        updateInfo(fa);
-        updateInfo(now);
     }
 
-    void splay(Node *now,Node *dist) {
-        if(now == NULL || now == dist) return;
-        while(now->father != dist) {
-            if(now->father->father == dist) {
-                rotate(now,now->father->childs[0] == now);
-            }else {
-                Node *fa = now->father,*anc = fa->father;
-                if(anc->childs[0] == fa) {
-                    if(fa->childs[0] == now) {
-                        rotate(fa,1);
-                        rotate(now,1);
-                    }else {
-                        rotate(now,0);
-                        rotate(now,1);
-                    }
+    void splay(int now) {
+        splay(now,0);
+    }
+
+    void splay(int now,int dist) {
+        if(now == 0 || now == dist) return;
+        while(n[now].father != dist) {
+            int father = n[now].father,anc = n[father].father;
+            if(anc != dist) {
+                if((n[anc].ch[0] == father) ^ (n[father].ch[0] == now)) {
+                    rotate(now);
                 }else {
-                    if(fa->childs[0] == now) {
-                        rotate(now,1);
-                        rotate(now,0);
-                    }else {
-                        rotate(fa,0);
-                        rotate(now,0);
-                    }
+                    rotate(father);
                 }
             }
+            rotate(now);
         }
     }
 
-    Node * search(int key) {
-        if(root == NULL) return NULL;
-        Node *now = root,*result = NULL;
-        while(true) {
-            if(now->val > key) {
-                if(now->childs[0] != NULL) {
-                    now = now->childs[0];
-                }else {
-                    break;
-                }
-            }else if(now->val < key) {
-                if(now->childs[1] != NULL) {
-                    now = now->childs[1];
-                }else {
-                    break;
-                }
+    int find(int value) {
+        int now = root,prev = 0;
+        while(now != 0) {
+            prev = now;
+            if(n[now].value > value) {
+                now = n[now].ch[0];
+            }else if(n[now].value < value) {
+                now = n[now].ch[1];
             }else {
-                result = now;
                 break;
             }
         }
-        splay(now,NULL);
-        return result;
+        splay(prev);
+        return now;
     }
 
-    Node * searchMin(Node *now) {
-        Node *father = now->father;
-        while(now->childs[0] != NULL) {
-            now = now->childs[0];
+    int searchMin(int now) {
+        int father = n[now].father;
+        while(n[now].ch[0] != 0) {
+            now = n[now].ch[0];
         }
         splay(now,father);
         return now;
     }
 
-    Node *searchMax(Node *now) {
-        Node *father = now->father;
-        while(now->childs[1] != NULL) {
-            now = now->childs[1];
-        }
-        splay(now,father);
-        return now;
-    }
-
-    void insert(int key) {
-        if(root == NULL) {
-            root = new Node(NULL,key);
+    void insert(int value) {
+        if(root == 0) {
+            root = newNode(0,value);
             return;
         }
-        Node *now = root,*result = NULL;
-        while(true) {
-            if(now->val > key) {
-                if(now->childs[0] == NULL) {
-                    now->childs[0] = new Node(now,key);
-                    result = now->childs[0];
-                    break;
+        int now = root,result = 0;
+        while(now != 0) {
+            if(n[now].value > value) {
+                if(n[now].ch[0] != 0) {
+                    now = n[now].ch[0];
                 }else {
-                    now = now->childs[0];
+                    result = newNode(now,value);
+                    n[now].ch[0] = result;
+                    break;
                 }
-            }else if(now->val < key) {
-                if(now->childs[1] == NULL) {
-                    now->childs[1] = new Node(now,key);
-                    result = now->childs[1];
-                    break;
+            }else if(n[now].value < value) {
+                if(n[now].ch[1] != 0) {
+                    now = n[now].ch[1];
                 }else {
-                    now = now->childs[1];
+                    result = newNode(now,value);
+                    n[now].ch[1] = result;
+                    break;
                 }
             }else {
-                now->cnt++;
+                n[now].cnt++;
+                updateInfo(now);
                 result = now;
                 break;
             }
         }
-        splay(result,NULL);
+        splay(result);
     }
 
-    void remove(int key) {
-        if(root == NULL) return;
-        Node *now = search(key);
-        if(now == NULL) return;
-        if(now->cnt > 1) {
-            now->cnt--;
-            updateInfo(now);
+    void remove(int value) {
+        if(find(value) == 0) return;
+        if(n[root].cnt > 1) {
+            n[root].cnt--;
+            updateInfo(root);
             return;
         }
-        if(now->childs[0] == NULL && now->childs[1] == NULL) {
-            root = NULL;
+        int lc = n[root].ch[0],rc = n[root].ch[1];
+        if(lc == 0 && rc == 0) {
+            root = 0;
             return;
         }
-        if(now->childs[0] == NULL && now->childs[1] != NULL) {
-            root = now->childs[1];
-            now->childs[1]->father = NULL;
+        if(lc != 0 && rc == 0) {
+            root = lc;
+            n[root].father = 0;
             return;
         }
-        if(now->childs[0] != NULL && now->childs[1] == NULL) {
-            root = now->childs[0];
-            now->childs[0]->father = NULL;
+        if(lc == 0 && rc != 0) {
+            root = rc;
+            n[root].father = 0;
             return;
         }
-        Node *newNode = searchMin(now->childs[1]);
-        newNode->father = NULL;
-        newNode->childs[0] = now->childs[0];
-        newNode->childs[0]->father = newNode;
-        root = newNode;
+        int newNode = searchMin(rc);
+        n[newNode].ch[0] = n[root].ch[0];
+        n[newNode].father = 0;
+        n[n[newNode].ch[0]].father = newNode;
         updateInfo(newNode);
+        root = newNode;
     }
 
-    int lessThan(int key) {
-        if(root == NULL) return -1;
-        Node *now = search(key);
-        if(now != NULL) {
-            return size(now->childs[0]);
-        }
-        if(root->val < key) {
-            return root->cnt + size(root->childs[0]);
+    int lowerCount(int value) {
+        if(root == 0) return 0;
+        find(value);
+        if(n[root].value >= value) {
+            return n[n[root].ch[0]].size;
         }else {
-            return size(root->childs[0]);
-        }
-    }
-
-    int findKth(int rank) {
-        if(root == NULL || rank > root->size) return -1;
-        Node *now = root;
-        while(true) {
-            if(rank >= size(now->childs[0]) + 1 && rank <= size(now->childs[0]) + now->cnt) {
-                break;
-            }else if(rank <= size(now->childs[0])) {
-                now = now->childs[0];
-            }else {
-                rank -= size(now->childs[0]) + now->cnt;
-                now = now->childs[1];
-            }
-        }
-        splay(now,NULL);
-        return now->val;
-    }
-
-    int getPrecursor(int key) {
-        Node *now = search(key);
-        if(now != NULL) {
-            Node *precursor = searchMax(now->childs[0]);
-            return precursor->val;
-        }
-        if(root->val > key) {
-            Node *precursor = searchMax(root->childs[0]);
-            return precursor->val;
-        }
-        return root->val;
-    }
-
-    int getSuccessor(int key) {
-        Node *now = search(key);
-        if(now != NULL) {
-            Node *successor = searchMin(now->childs[1]);
-            return successor->val;
-        }
-        if(root->val < key) {
-            Node *successor = searchMin(root->childs[1]);
-            return successor->val;
-        }
-        return root->val;
-    }
-
-    void updateInfo(Node *now) {
-        now->size = size(now->childs[0]) + size(now->childs[1]) + now->cnt;
-    }
-
-    int size(Node *now) {
-        if(now == NULL) return 0;
-        return now->size;
-    }
-
-    void print() {
-        print(root);
-    }
-
-    void print(Node *now) {
-        if(now == NULL) return;
-        print(now->childs[0]);
-        cout << now->val << endl;
-        print(now->childs[1]);
-    }
-
-    int size() {
-        return size(root);
-    }
-
-    ~Splay() {
-        if(root != NULL) {
-            delete root;
+            return n[n[root].ch[0]].size + n[root].cnt;
         }
     }
 
 };
 
+struct SegmentNode {
+    int left,right;
+    int leftChild,rightChild;
+
+    Splay splay;
+
+    void init(int left,int right) {
+        this->left = left;
+        this->right = right;
+        this->leftChild = 0;
+        this->rightChild = 0;
+        this->splay = Splay();
+    }
+
+    bool isLeafNode() {
+        return left == right;
+    }
+
+} sn[MAX_SEGMENT_NODE_SIZE];
+
 struct SegmentTree {
-    struct Node {
-        int left,right;
-        Node *leftChild,*rightChild;
-        Splay *splay;
-        Node() : left(-1) , right(-1) , leftChild(NULL) , rightChild(NULL) , splay(NULL) { }
-        Node(int left,int right) : left(left) , right(right) , leftChild(NULL) , rightChild(NULL) {
-            splay = new Splay();
-        }
+    int root;
 
-        bool isLeafNode() {
-            return left == right;
-        }
+    int newNode(int left,int right) {
+        sn[++sSize].init(left,right);
+        return sSize;
+    }
 
-        ~Node() {
-            if(left != right) {
-                delete leftChild;
-                delete rightChild;
-            }
-            delete splay;
-        }
-
-    };
-
-    Node *root;
-
-    SegmentTree(int size) {
-        root = new Node(0,size - 1);
+    SegmentTree(int n) {
+        root = newNode(0,n - 1);
         build(root);
     }
 
-    void build(Node *now) {
-        if(now->isLeafNode()) {
-            return;
-        }
-        int mid = (now->left + now->right) >> 1;
-        now->leftChild = new Node(now->left,mid);
-        build(now->leftChild);
-        now->rightChild = new Node(mid + 1,now->right);
-        build(now->rightChild);
+    void build(int now) {
+        if(sn[now].isLeafNode()) return;
+        int mid = (sn[now].left + sn[now].right) >> 1;
+        sn[now].leftChild = newNode(sn[now].left,mid);
+        build(sn[now].leftChild);
+        sn[now].rightChild = newNode(mid + 1,sn[now].right);
+        build(sn[now].rightChild);
     }
 
-    void update(int pos,int val) {
-        update(root,pos,val);
+    void insert(int pos,int val) {
+        insert(root,pos,val);
     }
 
-    void update(Node *now,int pos,int val) {
-        now->splay->insert(val);
-        if(now->isLeafNode()) {
+    void insert(int now,int pos,int val) {
+        sn[now].splay.insert(val);
+        if(sn[now].isLeafNode()) {
             return;
         }
-        int mid = (now->left + now->right) >> 1;
+        int mid = (sn[now].left + sn[now].right) >> 1;
         if(pos <= mid) {
-            update(now->leftChild,pos,val);
+            insert(sn[now].leftChild,pos,val);
         }else {
-            update(now->rightChild,pos,val);
+            insert(sn[now].rightChild,pos,val);
         }
     }
 
@@ -347,56 +258,56 @@ struct SegmentTree {
         remove(root,pos,val);
     }
 
-    void remove(Node *now,int pos,int val) {
-        now->splay->remove(val);
-        if(now->isLeafNode()) {
+    void remove(int now,int pos,int val) {
+        sn[now].splay.remove(val);
+        if(sn[now].isLeafNode()) {
             return;
         }
-        int mid = (now->left + now->right) >> 1;
+        int mid = (sn[now].left + sn[now].right) >> 1;
         if(pos <= mid) {
-            remove(now->leftChild,pos,val);
+            remove(sn[now].leftChild,pos,val);
         }else {
-            remove(now->rightChild,pos,val);
+            remove(sn[now].rightChild,pos,val);
         }
     }
 
-    int queryLessThan(int left,int right,int value) {
-        return queryLessThan(root,left,right,value);
+    int queryLessThan(int left,int right,int val) {
+        return queryLessThan(root,left,right,val);
     }
 
-    int queryLessThan(Node *now,int left,int right,int value) {
-        if(now->left == left && now->right == right) {
-            return now->splay->lessThan(value);
+    int queryLessThan(int now,int left,int right,int val) {
+        if(sn[now].left == left && sn[now].right == right) {
+            return sn[now].splay.lowerCount(val);
         }
-        int mid = (now->left + now->right) >> 1;
-        if(right <= mid) {
-            return queryLessThan(now->leftChild,left,right,value);
-        }else {
-            if(left > mid) {
-                return queryLessThan(now->rightChild,left,right,value);
+        int mid = (sn[now].left + sn[now].right) >> 1;
+        if(left <= mid) {
+            if(right <= mid) {
+                return queryLessThan(sn[now].leftChild,left,right,val);
             }else {
-                return queryLessThan(now->leftChild,left,mid,value) + queryLessThan(now->rightChild,mid + 1,right,value);
+                return queryLessThan(sn[now].leftChild,left,mid,val) + queryLessThan(sn[now].rightChild,mid + 1,right,val);
             }
+        }else {
+            return queryLessThan(sn[now].rightChild,left,right,val);
         }
     }
 
-    ~SegmentTree() {
-        delete root;
-    }
 };
+
+int values[MAXN];
+char buffer[BUFFER_SIZE];
 
 int main() {
     int T = read<int>();
     while(T--) {
-        int n = read<int>(),m = read<int>();
-        SegmentTree stree(n);
-        int *values = new int[n];
-        for(int i = 0;i < n;i++) {
+        size = 0;
+        sSize = 0;
+        int N = read<int>(),M = read<int>();
+        SegmentTree stree(N);
+        for(int i = 0;i < N;i++) {
             values[i] = read<int>();
-            stree.update(i,values[i]);
+            stree.insert(i,values[i]);
         }
-        char *buffer = new char[2];
-        while(m--) {
+        while(M--) {
             scanf("%s",buffer);
             switch(buffer[0]) {
                 case 'Q': {
@@ -419,7 +330,7 @@ int main() {
                     int pos = read<int>(),value = read<int>();
                     pos--;
                     stree.remove(pos,values[pos]);
-                    stree.update(pos,value);
+                    stree.insert(pos,value);
                     values[pos] = value;
                     break;
                 }
