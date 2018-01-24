@@ -33,6 +33,11 @@ struct Graph {
         edges[tot].next = heads[u];
         heads[u] = tot++;
     }
+
+    ~Graph() {
+        delete[] edges;
+        delete[] heads;
+    }
 };
 
 struct SegmentTree {
@@ -47,6 +52,15 @@ struct SegmentTree {
 
         bool isLeafNode() {
             return left == right;
+        }
+
+        ~Node() {
+            if(ch[0] != NULL) {
+                delete ch[0];
+            }
+            if(ch[1] != NULL) {
+                delete ch[1];
+            }
         }
     };
 
@@ -86,18 +100,46 @@ struct SegmentTree {
         }else {
             updateValue(now->ch[1],pos,val);
         }
+        updateInfo(now);
+    }
+
+    int getValue(int left,int right) {
+        return getValue(root,left,right);
+    }
+
+    int getValue(Node *now,int left,int right) {
+        if(now->left == left && now->right == right) {
+            return now->value;
+        }
+        int mid = (now->left + now->right) >> 1;
+        if(left <= mid) {
+            if(right <= mid) {
+                return getValue(now->ch[0],left,right);
+            }else {
+                return min(getValue(now->ch[0],left,mid),getValue(now->ch[1],mid + 1,right));
+            }
+        }else {
+            return getValue(now->ch[1],left,right);
+        }
+    }
+
+    ~SegmentTree() {
+        if(root != NULL) {
+            delete root;
+        }
     }
 };
 
 struct Tree {
-    int *sizes,*tops,*fathers,*heavySons,*reIndexs,*depths;
-    SegmentTree *childTree,*otherTree;
+    int *sizes,*tops,*ends,*fathers,*heavySons,*reIndexs,*depths;
+    SegmentTree *upTree,*downTree;
     Graph *graph;
 
     Tree(Graph *graph) : graph(graph) {
         int size = graph->nodeSize;
         sizes = new int[size];
         tops = new int[size];
+        ends = new int[size];
         fathers = new int[size];
         heavySons = new int[size];
         reIndexs = new int[size];
@@ -106,8 +148,8 @@ struct Tree {
         getTreeInfo(0,-1);
         int nowIndex = 0;
         mapIndex(0,-1,0,nowIndex);
-        childTree = new SegmentTree(size);
-        otherTree = new SegmentTree(size);
+        upTree = new SegmentTree(size);
+        downTree = new SegmentTree(size);
     }
 
     void getTreeInfo(int now,int father) {
@@ -132,6 +174,9 @@ struct Tree {
         reIndexs[now] = nowIndex++;
         if(heavySons[now] != -1) {
             mapIndex(heavySons[now],now,anc,nowIndex);
+            ends[now] = ends[heavySons[now]];
+        }else {
+            ends[now] = now;
         }
         for(int i = graph->heads[now];i != -1;i = graph->edges[i].next) {
             Graph::Edge &tmpEdge = graph->edges[i];
@@ -141,11 +186,59 @@ struct Tree {
     }
 
     void makeRed(int pos) {
-        childTree->updateValue(pos,0);
+        int u = pos;
+        while(u != -1) {
+            int topU = tops[u];
+            upTree->updateValue(reIndexs[u],depths[pos] - depths[topU]);
+            downTree->updateValue(reIndexs[u],depths[pos] - depths[u] + depths[ends[u]] - depths[u]);
+            u = fathers[topU];
+        }
+    }
 
+    int getMinDis(int pos) {
+        int u = pos,result = INF;
+        while(u != -1) {
+            int topU = tops[u],endU = ends[u];
+            result = min(result,downTree->getValue(reIndexs[topU],reIndexs[u]) + depths[pos] - depths[u] - (depths[endU] - depths[u]));
+            result = min(result,upTree->getValue(reIndexs[u],reIndexs[endU]) + depths[pos] - depths[u] - (depths[u] - depths[topU]));
+            u = fathers[topU];
+        }
+        return result;
+    }
+
+    ~Tree() {
+        delete[] sizes;
+        delete[] tops;
+        delete[] ends;
+        delete[] fathers;
+        delete[] heavySons;
+        delete[] reIndexs;
+        delete[] depths;
+        delete upTree;
+        delete downTree;
     }
 };
 
 int main() {
+    int n = read<int>(),m = read<int>();
+    Graph *graph = new Graph((n - 1) * 2,n);
+    for(int i = 0;i < n - 1;i++) {
+        int u = read<int>(),v = read<int>();
+        u--; v--;
+        graph->addEdge(u,v);
+        graph->addEdge(v,u);
+    }
+    Tree tree(graph);
+    tree.makeRed(0);
+    while(m--) {
+        int opt = read<int>(),v = read<int>();
+        v--;
+        if(opt == 1) {
+            tree.makeRed(v);
+        }else {
+            printf("%d\n",tree.getMinDis(v));
+        }
+    }
+    delete graph;
     return 0;
 }
