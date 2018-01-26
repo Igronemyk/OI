@@ -23,14 +23,14 @@ T read() {
 }
 
 struct TreapNode {
-    int ch[2],value,size;
+    int ch[2],value,priority,size;
 
-    TreapNode() : value(0) , size(0) {
+    TreapNode() : value(0) , priority(0) , size(0) {
         ch[0] = 0;
         ch[1] = 0;
     }
 
-    TreapNode(int value) : value(value) , size(1) {
+    TreapNode(int value) : value(value) , priority(rand()) , size(1) {
         ch[0] = 0;
         ch[1] = 0;
     }
@@ -58,8 +58,7 @@ struct Treap {
     static int merge(int a,int b) {
         if(a == 0) return b;
         if(b == 0) return a;
-        bool flag = rand() % 2;
-        if(flag) {
+        if(tn[a].priority > tn[b].priority) {
             tn[a].ch[1] = merge(tn[a].ch[1],b);
             updateInfo(a);
             return a;
@@ -252,6 +251,9 @@ struct SegmentTree {
 
     int querySuccessor(int left,int right,int value) {
         int cnt = queryNotGreaterThan(left,right,value);
+        if(cnt + 1 > right - left + 1) {
+            return INF;
+        }
         int tmpValue = queryValue(left,right,cnt + 1);
         if(tmpValue == value) {
             if(cnt + 1 == right - left + 1) return INF;
@@ -310,4 +312,3 @@ int main() {
     }
     return 0;
 }
-//TODO Fix the query value could not read the real left or right value from the node infomation,so change it to the arguments.
