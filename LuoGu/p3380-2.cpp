@@ -214,8 +214,6 @@ struct SegmentTree {
         if(now == 0) return 0;
         if(sn[now].left == left && sn[now].right == right) {
             int tmpResult = sn[now].treap.getCnt(queryLeft,queryRight);
-            printf("At %d,%d query %d,%d,result %d\n",left,right,queryLeft,queryRight,tmpResult);
-            sn[now].treap.print();
             return tmpResult;
         }
         int mid = (sn[now].left + sn[now].right) >> 1;
