@@ -267,6 +267,7 @@ struct SegmentTree {
 int values[MAXN];
 
 int main() {
+    srand(123456);
     int n = read<int>(),m = read<int>();
     SegmentTree stree(MIN_VAL_RANGE,MAX_VAL_RANGE);
     for(int i = 0;i < n;i++) {
