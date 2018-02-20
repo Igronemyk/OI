@@ -157,26 +157,34 @@ struct BCS {
 int main() {
     int n = read<int>(),m = read<int>();
     BCS bcset(m,n);
+    int lastAns = 0;
     while(m--) {
         int opt = read<int>();
         switch(opt) {
             case 1: {
                 int u = read<int>(),v = read<int>();
+                u ^= lastAns;
+                v ^= lastAns;
                 u--; v--;
                 bcset.merge(u,v);
                 break;
             }
             case 2: {
                 int oldVersion = read<int>();
+                oldVersion ^= lastAns;
                 bcset.rollBack(oldVersion);
                 break;
             }
             case 3: {
                 int u = read<int>(),v = read<int>();
+                u ^= lastAns;
+                v ^= lastAns;
                 u--; v--;
-                printf("%d\n",bcset.isLinked(u,v));
+                lastAns = bcset.isLinked(u,v);
+                printf("%d\n",lastAns);
             }
         }
     }
     return 0;
 }
+
