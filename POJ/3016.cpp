@@ -19,14 +19,9 @@ T read() {
 }
 
 void getCost(int n) {
-    for(int i = 1;i <= n;i++) {
-        Treap treap;
-        for(int j = i;j <= n;j++) {
-            treap.insert(tmpValue[j]);
-            costs[i][j] = min(treap.getResult(),costs[i][j]);
-        }
-    }
+
 }
+
 
 
 int main() {
