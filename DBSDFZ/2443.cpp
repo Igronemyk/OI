@@ -6,7 +6,7 @@ using namespace std;
 
 const int MAX_CHARSET_SIZE = 128;
 const char FIRST_CHAR = '\0';
-const int BUFFER_SIZE = 1e6 + 1;
+const int BUFFER_SIZE = 100;
 
 struct SuffixArray {
     char *str;
@@ -98,14 +98,38 @@ struct SuffixArray {
 };
 
 int main() {
-    char *str = new char[BUFFER_SIZE];
-    scanf("%s",str);
-    int length = strlen(str);
-    SuffixArray sa(str,length);
-    for(int i = 0;i < length;i++) {
-        printf("%d ",sa.sa[i] + 1);
+    int N;
+    scanf("%d",&N);
+    char *buffer = new char[BUFFER_SIZE + 1];
+    char *str = new char[N * 3 + 2],*result = new char[N + 1];
+    int nowPos = 0;
+    for(int i = 0;i < N;i++) {
+        scanf("%s",buffer);
+        str[nowPos++] = buffer[0];
+    }
+    str[nowPos++] = '$';
+    for(int i = N - 1;i >= 0;i--) {
+        str[nowPos++] = str[i];
+    }
+    SuffixArray sa(str,nowPos);
+    int left = 0,right = N + 1;
+    for(int nowLength = 0;nowLength < N;nowLength++) {
+        if(sa.rank[left] < sa.rank[right]) {
+            result[nowLength] = str[left++];
+        }else {
+            result[nowLength] = str[right++];
+        }
+    }
+    nowPos = 0;
+    for(int i = 0;i < N;i++) {
+        printf("%c",result[i]);
+        ++nowPos;
+        if(nowPos == 80) {
+            printf("\n");
+            nowPos = 0;
+        }
     }
     printf("\n");
-    delete[] str;
     return 0;
 }
+

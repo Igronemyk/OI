@@ -1,85 +1,32 @@
 #include <cstdio>
 #include <algorithm>
 #include <cstring>
-#include <climits>
-#include <map>
-#include <cctype>
 
 using namespace std;
 
-const int MAX_SCAPE_NODE_SIZE = 120010;
-const int MAX_TREAP_NODE_SIZE = 2e6;
-const int MAX_SEGMENT_NDOE_SIZE = 2e6;
-const int MAX_VAL_RANGE = 1e8;
-const int MIN_VAL_RANGE = 0;
+const int MAX_SCAPE_NODE_SIZE = 1e5;
+const int MAX_TREAP_NODE_SIZE = 4e6;
+const int MAX_SEGMENT_NDOE_SIZE = 4e6;
+const int MAX_VAL_RANGE = 70010;
+const int MIN_VAL_RANGE = 0 ;
 const double MIN_TAG_RANGE = -1e9;
 const double MAX_TAG_RANGE = 1e9;
-const int MAXN = 60010;
-
-namespace FastIO{
-    const int L=(1<<21)+1;
-    struct io{
-        char ibuf[L],*iS,*iT,obuf[L],*oS,*oT,c,st[55];
-        int tp;
-        void flush(){fwrite(obuf,1,oS-obuf,stdout),oS=obuf;}
-        void putc(char x){
-            *oS++=x;
-            if(oS==oT)flush();
-        }
-        char gc(){return iS==iT?(iT=(iS=ibuf)+fread(ibuf,1,L,stdin),(iS==iT?EOF:*iS++)):*iS++;}
-        template<class T>T rd(){
-            register T x=0;
-            while(!isdigit(c=gc()));
-            for(;isdigit(c);c=gc())x=x*10+(c&15);
-            return x;
-        }
-        template<class T>void print(register T x){
-            if(!x)putc('0');
-            else{
-                for(tp=0;x;st[tp++]=x%10+48,x/=10);
-                for(tp--;~tp;putc(st[tp--]));
-            }
-            putc('\n');
-        }
-        io():oS(obuf),oT(obuf+L-1){}
-        ~io(){flush();}
-    }ip;
-}
+const int MAXN = 35010;
+const int BUFFER_SIZE = 1;
 
 template<typename T>
 T read() {
-    return FastIO::ip.rd<T>();
+    T result = 0;int f = 1;char c = getchar();
+    while(c > '9' || c < '0') {if(c == '-') f *= -1;c = getchar();}
+    while(c <= '9' && c >= '0') {result = result * 10 + c - '0';c = getchar();}
+    return result * f;
 }
-
-template<typename T>
-void print(T value) {
-    FastIO::ip.print<T>(value);
-}
-
-struct Graph {
-    struct Edge {
-        int next,to;
-    };
-    Edge edges[MAXN * 2];
-    int tot,heads[MAXN];
-
-    Graph() {
-        tot = 0;
-        memset(heads,-1,sizeof(heads));
-    }
-
-    void addEdge(int u,int v) {
-        edges[tot].next = heads[u];
-        edges[tot].to = v;
-        heads[u] = tot++;
-    }
-} graph;
 
 struct ScapeNode {
-    int ch[2],father,size;
+    int ch[2],father,value,size;
     double tagL,tagR,tag;
 
-    ScapeNode() : size(0) {
+    ScapeNode() : value(0) , size(0) {
         tagL = 0;
         tagR = 0;
         tag = 0;
@@ -87,14 +34,14 @@ struct ScapeNode {
         ch[1] = 0;
     }
 
-    ScapeNode(int father,double tagL,double tagR) : father(father) , size(1) , tagL(tagL) , tagR(tagR) , tag((tagL + tagR) / 2.0) {
+    ScapeNode(int father,int value,double tagL,double tagR) : father(father) , value(value) , size(1) , tagL(tagL) , tagR(tagR) , tag((tagL + tagR) / 2.0) {
         ch[0] = 0;
         ch[1] = 0;
     }
 
 } sn[MAX_SCAPE_NODE_SIZE];
 
-int scapeSize = 0,travelPos[MAX_SCAPE_NODE_SIZE],travelCnt = 0;
+int scapeSize = 0,travelPos[MAX_SCAPE_NODE_SIZE],travelValue[MAX_SCAPE_NODE_SIZE],travelCnt = 0;
 
 struct ScapeTree {
 
@@ -102,8 +49,8 @@ struct ScapeTree {
 
     int root;
 
-    static int newNode(int father,double tagL,double tagR) {
-        sn[++scapeSize] = ScapeNode(father,tagL,tagR);
+    static int newNode(int father,int value,double tagL,double tagR) {
+        sn[++scapeSize] = ScapeNode(father,value,tagL,tagR);
         return scapeSize;
     }
 
@@ -115,7 +62,7 @@ struct ScapeTree {
         if(left > right) return 0;
         int mid = (left + right) >> 1;
         int now = travelPos[mid];
-        sn[now] = ScapeNode(father,tagL,tagR);
+        sn[now] = ScapeNode(father,travelValue[mid],tagL,tagR);
         sn[now].ch[0] = buildTree(now,left,mid - 1,tagL,sn[now].tag);
         sn[now].ch[1] = buildTree(now,mid + 1,right,sn[now].tag,tagR);
         updateInfo(now);
@@ -161,20 +108,27 @@ struct ScapeTree {
         return goat;
     }
 
-    int insertAfter(int now) {
-        if(now == 0) return 0;
-        int goat = 0,result = 0;
-        if(sn[now].ch[1] == 0) {
-            sn[now].ch[1] = newNode(now,sn[now].tag,sn[now].tagR);
+    int insertBefore(int value,int k) {
+        int now = getKth(k),goat = 0,result = 0;
+        if(now == 0) {
+            now = root;
+            while(sn[now].ch[1] != 0) {
+                now = sn[now].ch[1];
+            }
+            sn[now].ch[1] = newNode(now,value,sn[now].tag,sn[now].tagR);
             result = sn[now].ch[1];
             goat = updateAndCheckGoat(now);
-        }else {
-            now = sn[now].ch[1];
-            while(sn[now].ch[0] != 0) {
-                now = sn[now].ch[0];
-            }
-            sn[now].ch[0] = newNode(now,sn[now].tagL,sn[now].tag);
+        }else if(sn[now].ch[0] == 0) {
+            sn[now].ch[0] = newNode(now,value,sn[now].tagL,sn[now].tag);
             result = sn[now].ch[0];
+            goat = updateAndCheckGoat(now);
+        }else {
+            now = sn[now].ch[0];
+            while(sn[now].ch[1] != 0) {
+                now = sn[now].ch[1];
+            }
+            sn[now].ch[1] = newNode(now,value,sn[now].tag,sn[now].tagR);
+            result = sn[now].ch[1];
             goat = updateAndCheckGoat(now);
         }
         if(goat != 0) {
@@ -183,10 +137,19 @@ struct ScapeTree {
         return result;
     }
 
+    int getValue(int sign) {
+        return sn[sign].value;
+    }
+
+    void setValue(int sign,int value) {
+        sn[sign].value = value;
+    }
+
     void travel(int now) {
         if(now == 0) return;
         travel(sn[now].ch[0]);
         travelPos[++travelCnt] = now;
+        travelValue[travelCnt] = sn[now].value;
         travel(sn[now].ch[1]);
     }
 
@@ -204,6 +167,19 @@ struct ScapeTree {
         }
         travelCnt = 0;
     }
+
+    void print() {
+        //print(root);
+        //printf("\n");
+    }
+
+    void print(int now) {
+        if(now == 0) return;
+        printf("(%d,%d,%.3lf) ",sn[now].value,now,sn[now].tag);
+        print(sn[now].ch[1]);
+    }
+
+
 };
 
 struct TreapNode {
@@ -231,6 +207,7 @@ bool compLess(int a,int b) {
 bool compNotGreater(int a,int b) {
     if(a == b) return true;
     return sn[a].tag < sn[b].tag;
+    //return sn[a].tag <= sn[b].tag;
 }
 
 struct Treap {
@@ -400,88 +377,65 @@ struct SegmentTree {
         }
     }
 
-    int getGreaterThan(int x,int l,int r) {
-        return getGreaterThan(root,MIN_VAL_RANGE,MAX_VAL_RANGE,x + 1,MAX_VAL_RANGE,l,r);
+    int getKth(int l,int r,int k) {
+        return getKth(root,MIN_VAL_RANGE,MAX_VAL_RANGE,l,r,k);
     }
 
-    int getGreaterThan(int now,int left,int right,int l,int r,int queryL,int queryR) {
-        if(now == 0) return 0;
-        if(left == l && right == r) {
-            return segn[now].treap.getCount(queryL,queryR);
-        }
-        int mid = (left + right) >> 1;
-        if(l <= mid) {
-            if(r <= mid) {
-                return getGreaterThan(segn[now].ch[0],left,mid,l,r,queryL,queryR);
-            }else {
-                return getGreaterThan(segn[now].ch[0],left,mid,l,mid,queryL,queryR) + getGreaterThan(segn[now].ch[1],mid + 1,right,mid + 1,r,queryL,queryR);
-            }
+    int getKth(int now,int left,int right,int l,int r,int k) {
+        if(left == right) return left;
+        int mid = (left + right) >> 1,cnt = segn[segn[now].ch[0]].treap.getCount(l,r);
+        if(cnt < k) {
+            k -= cnt;
+            return getKth(segn[now].ch[1],mid + 1,right,l,r,k);
         }else {
-            return getGreaterThan(segn[now].ch[1],mid + 1,right,l,r,queryL,queryR);
+            return getKth(segn[now].ch[0],left,mid,l,r,k);
         }
     }
 
 };
 
-ScapeTree scapeTree;
-SegmentTree stree;
-
-int values[MAXN],startSigns[MAXN],endSigns[MAXN];
-
-void dfs(int now,int father) {
-    ++travelCnt;
-    travelPos[travelCnt] = travelCnt;
-    startSigns[now] = travelCnt;
-    for(int i = graph.heads[now];i != -1;i = graph.edges[i].next) {
-        Graph::Edge &tmpEdge = graph.edges[i];
-        if(tmpEdge.to == father) continue;
-        dfs(tmpEdge.to,now);
-    }
-    ++travelCnt;
-    travelPos[travelCnt] = travelCnt;
-    endSigns[now] = travelCnt;
-}
+int values[MAXN];
 
 int main() {
-    srand(654321);
     int n = read<int>();
-    for(int i = 0;i < n - 1;i++) {
-        int u = read<int>(),v = read<int>();
-        graph.addEdge(u,v);
-        graph.addEdge(v,u);
-    }
+    SegmentTree stree;
     for(int i = 1;i <= n;i++) {
         values[i] = read<int>();
+        travelPos[++travelCnt] = i;
+        travelValue[travelCnt] = values[i];
     }
-    dfs(1,0);
+    ScapeTree scapeTree;
     scapeTree.init();
     for(int i = 1;i <= n;i++) {
-        stree.insert(values[i],startSigns[i]);
+        stree.insert(values[i],i);
     }
-    int m = read<int>(),lastAns = 0,nowIndex = n;
-    while(m--) {
-        int opt = read<int>(),u = read<int>() ^ lastAns,x = read<int>() ^ lastAns;
-        switch(opt) {
-            case 0: {
-                lastAns = stree.getGreaterThan(x,startSigns[u],endSigns[u]);
-                print(lastAns);
+    int q = read<int>();
+    char *buffer = new char[BUFFER_SIZE + 1];
+    int lastAns = 0;
+    while(q--) {
+        scanf("%s",buffer);
+        switch(buffer[0]) {
+            case 'Q': {
+                int x = read<int>() ^ lastAns,y = read<int>() ^ lastAns,k = read<int>() ^ lastAns;
+                x = scapeTree.getKth(x);
+                y = scapeTree.getKth(y);
+                lastAns = stree.getKth(x,y,k);
+                printf("%d\n",lastAns);
                 break;
             }
-            case 1: {
-                stree.remove(values[u],startSigns[u]);
-                values[u] = x;
-                stree.insert(values[u],startSigns[u]);
+            case 'M': {
+                int x = read<int>() ^ lastAns,val = read<int>() ^ lastAns;
+                int sign = scapeTree.getKth(x);
+                int value = scapeTree.getValue(sign);
+                scapeTree.setValue(sign,val);
+                stree.remove(value,sign);
+                stree.insert(val,sign);
                 break;
             }
-            case 2: {
-                ++nowIndex;
-                int sign = nowIndex;
-                int startSign = scapeTree.insertAfter(startSigns[u]);
-                int endSign = scapeTree.insertAfter(startSign);
-                startSigns[sign] = startSign;
-                endSigns[sign] = endSign;
-                values[sign] = x;
-                stree.insert(values[sign],startSigns[sign]);
+            case 'I': {
+                int x = read<int>() ^ lastAns,val = read<int>() ^ lastAns;
+                int sign = scapeTree.insertBefore(val,x);
+                stree.insert(val,sign);
                 break;
             }
         }

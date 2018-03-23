@@ -14,46 +14,55 @@ T read() {
 
 template<typename T>
 struct LeftTree {
-    LeftTree *leftChild,*rightChild;
-    int dis;
-    T value;
+    struct Node {
+        Node *ch[2];
+        int dis;
+        T value;
 
-    LeftTree() : leftChild(NULL) , rightChild(NULL) , dis(-1) , value(-1) { }
-    LeftTree(T value) : leftChild(NULL) , rightChild(NULL) , dis(0) , value(value) { }
+        Node(T value) : dis(0) , value(value) {
+            ch[0] = NULL;
+            ch[1] = NULL;
+        }
+    };
 
-    bool hasLeftChild() {
-        return leftChild != NULL;
+    Node *root;
+
+    LeftTree() : root(NULL) { }
+
+    LeftTree(T value) : root(new Node(value)) { }
+
+    static void updateDis(Node *now) {
+        now->dis = now->ch[1] != NULL ? now->ch[1]->dis + 1 : 0;
     }
 
-    bool hasRightChild() {
-        return rightChild != NULL;
+    void merge(LeftTree<T> *otherTree) {
+        root = merge(root,otherTree->root);
     }
 
-    template<typename K>
-    static LeftTree<K> * merge(LeftTree<K> *a,LeftTree<K> *b) {
+    T getRootValue() {
+        if(root == NULL) return T();
+        return root->value;
+    }
+
+    void deleteMin() {
+        if(root == NULL) return;
+        root = merge(root->ch[0],root->ch[1]);
+    }
+
+    static Node *merge(Node *a,Node *b) {
         if(a == NULL) return b;
         if(b == NULL) return a;
         if(b->value < a->value) {
             swap(a,b);
         }
-        a->rightChild = merge(a->rightChild,b);
-        if(!a->hasLeftChild() || a->leftChild->dis < a->rightChild->dis) {
-            swap(a->leftChild,a->rightChild);
+        a->ch[1] = merge(a->ch[1],b);
+        if(a->ch[0] == NULL || a->ch[0]->dis < a->ch[1]->dis) {
+            swap(a->ch[0],a->ch[1]);
         }
-        a->updateDis();
+        updateDis(a);
         return a;
     }
-
-    void updateDis() {
-        dis = hasRightChild() ? rightChild->dis + 1 : 0;
-    }
-
-    template<typename K>
-    static LeftTree<K> * deleteMin(LeftTree<K> *value) {
-        return merge(value->leftChild,value->rightChild);
-    }
 };
-
 
 struct BCS {
     int *father,size;
@@ -115,7 +124,7 @@ int main() {
                     break;
                 }
                 int posX = bcset.getFather(x),posY = bcset.getFather(y);
-                trees[posX] = LeftTree<Info>::merge(trees[posX],trees[posY]);
+                trees[posX]->merge(trees[posY]);
                 bcset.merge(posX,posY);
                 break;
             }
@@ -127,9 +136,9 @@ int main() {
                     break;
                 }
                 int posX = bcset.getFather(x);
-                printf("%d\n",trees[posX]->value.value);
-                isDeleted[trees[posX]->value.index] = true;
-                trees[posX] = LeftTree<Info>::deleteMin(trees[posX]);
+                printf("%d\n",trees[posX]->getRootValue().value);
+                isDeleted[trees[posX]->getRootValue().index] = true;
+                trees[posX]->deleteMin();
                 break;
             }
         }

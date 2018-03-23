@@ -6,7 +6,7 @@ using namespace std;
 
 const int MAX_CHARSET_SIZE = 128;
 const char FIRST_CHAR = '\0';
-const int BUFFER_SIZE = 1e6 + 1;
+const int BUFFER_SIZE = 3e5;
 
 struct SuffixArray {
     char *str;
@@ -61,7 +61,7 @@ struct SuffixArray {
                     }
                     continue;
                 }
-                if(y[sa[i]] != y[sa[i - 1]] || (sa[i] + nowLen >= length && sa[i - 1] + nowLen < length) || (sa[i] + nowLen < length && sa[i - 1] + nowLen >= length) || y[sa[i] + nowLen] != y[sa[i - 1] + nowLen]) {
+                if(y[sa[i]] != y[sa[i - 1]] || (sa[i] + nowLen >= length && sa[i - 1] + nowLen < length) || (sa[i] < length && sa[i - 1] + nowLen >= length) ||  (y[sa[i] + nowLen] != y[sa[i - 1] + nowLen])) {
                     x[sa[i]]++;
                 }
             }
@@ -98,14 +98,20 @@ struct SuffixArray {
 };
 
 int main() {
-    char *str = new char[BUFFER_SIZE];
+    char *str = new char[BUFFER_SIZE + 1];
     scanf("%s",str);
-    int length = strlen(str);
+    int length = strlen(str),n = length;
+    for(int i = 0;i < length;i++) {
+        str[i + length] = str[i];
+    }
+    length *= 2;
+    str[length] = 0;
     SuffixArray sa(str,length);
     for(int i = 0;i < length;i++) {
-        printf("%d ",sa.sa[i] + 1);
+        if(sa.sa[i] < n) {
+            printf("%c",str[sa.sa[i] + n - 1]);
+        }
     }
     printf("\n");
-    delete[] str;
     return 0;
 }

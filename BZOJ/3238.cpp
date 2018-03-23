@@ -1,27 +1,27 @@
 #include <cstdio>
 #include <algorithm>
 #include <cstring>
+#include <stack>
 
 using namespace std;
 
 const int MAX_CHARSET_SIZE = 128;
 const char FIRST_CHAR = '\0';
-const int BUFFER_SIZE = 1e6 + 1;
+const int BUFFER_SIZE = 500000;
 
 struct SuffixArray {
     char *str;
-    int length;
-    int *sa,*rank,*height;
+    int *rank,*height,*sa,length;
+
     SuffixArray(char *str,int length) : str(str) , length(length) {
-        sa = new int[length];
         rank = new int[length];
         height = new int[length];
+        sa = new int[length];
         buildSA();
     }
 
     void buildSA() {
-        int nowRange = MAX_CHARSET_SIZE - 1,*x = rank,*y = height,*cnt = new int[max(length,MAX_CHARSET_SIZE)];
-        memset(cnt,0,sizeof(int) * (nowRange + 1));
+        int nowRange = MAX_CHARSET_SIZE - 1,*x = rank,*y = height,*cnt = new int[max(MAX_CHARSET_SIZE,length)];
         for(int i = 0;i < length;i++) {
             cnt[x[i] = str[i] - FIRST_CHAR]++;
         }
@@ -32,13 +32,13 @@ struct SuffixArray {
             sa[--cnt[x[i]]] = i;
         }
         for(int nowLen = 1;nowLen <= length;nowLen <<= 1) {
-            int tmpPos = 0;
+            int nowPos = 0;
             for(int i = length - nowLen;i < length;i++) {
-                y[tmpPos++] = i;
+                y[nowPos++] = i;
             }
             for(int i = 0;i < length;i++) {
                 if(sa[i] >= nowLen) {
-                    y[tmpPos++] = sa[i] - nowLen;
+                    y[nowPos++] = sa[i] - nowLen;
                 }
             }
             memset(cnt,0,sizeof(int) * (nowRange + 1));
@@ -55,13 +55,13 @@ struct SuffixArray {
             x[sa[0]] = 0;
             for(int i = 1;i < length;i++) {
                 x[sa[i]] = x[sa[i - 1]];
-                if(sa[i - 1] + nowLen >= length && sa[i] + nowLen >= length) {
+                if(sa[i] + nowLen >= length && sa[i - 1] + nowLen >= length) {
                     if(y[sa[i]] != y[sa[i - 1]]) {
                         x[sa[i]]++;
                     }
                     continue;
                 }
-                if(y[sa[i]] != y[sa[i - 1]] || (sa[i] + nowLen >= length && sa[i - 1] + nowLen < length) || (sa[i] + nowLen < length && sa[i - 1] + nowLen >= length) || y[sa[i] + nowLen] != y[sa[i - 1] + nowLen]) {
+                if(y[sa[i]] != y[sa[i - 1]] || ((sa[i] + nowLen >= length) ^ (sa[i - 1] + nowLen >= length)) || (y[sa[i] + nowLen] != y[sa[i - 1] + nowLen])) {
                     x[sa[i]]++;
                 }
             }
@@ -90,22 +90,16 @@ struct SuffixArray {
         delete[] cnt;
     }
 
-    ~SuffixArray() {
-        delete[] sa;
-        delete[] rank;
-        delete[] height;
-    }
 };
 
 int main() {
-    char *str = new char[BUFFER_SIZE];
-    scanf("%s",str);
-    int length = strlen(str);
-    SuffixArray sa(str,length);
+    char *buffer = new char[BUFFER_SIZE + 1];
+    scanf("%s",buffer);
+    int length = strlen(buffer);
+    SuffixArray sa(buffer,length);
     for(int i = 0;i < length;i++) {
-        printf("%d ",sa.sa[i] + 1);
+        printf("%d ",sa.height[i]);
     }
     printf("\n");
-    delete[] str;
     return 0;
 }
