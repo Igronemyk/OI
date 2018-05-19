@@ -1,7 +1,12 @@
 #include <cstdio>
+#include <algorithm>
+#include <cstring>
 #include <stack>
 
 using namespace std;
+
+const int MAXN = 1010;
+const int INF = 0x3f3f3f3f;
 
 template<typename T>
 T read() {
@@ -11,197 +16,106 @@ T read() {
     return result * f;
 }
 
-struct Stack {
-    int *value,size,tail;
-    Stack(int size) : size(size) {
-        value = new int[size];
-        tail = 0;
+struct Graph {
+    struct Edge {
+        int next,to;
+    };
+    Edge edges[MAXN * MAXN];
+    int tot,heads[MAXN];
+
+    Graph() : tot(0) {
+        memset(heads,-1,sizeof(heads));
     }
 
-    void push(int val) {
-        value[tail++] = val;
+    void addEdge(int u,int v) {
+        edges[tot].next = heads[u];
+        edges[tot].to = v;
+        heads[u] = tot++;
     }
+} graph;
 
-    void pop() {
-        tail--;
-    }
+int values[MAXN],minValues[MAXN],color[MAXN];
 
-    int top() {
-        return value[tail - 1];
-    }
-
-    bool isEmpty() {
-        return tail == 0;
-    }
-};
-
-struct Queue {
-    int *value,size,head,tail;
-    Queue(int size) : size(size) {
-        value = new int[size];
-        head = 0;
-        tail = 0;
-    }
-
-    void push(int val) {
-        value[tail++] = val;
-    }
-
-    void pop() {
-        head++;
-    }
-
-    int front() {
-        return value[head];
-    }
-
-    bool isEmpty() {
-        return head == tail;
-    }
-};
-
-Stack stk1(1010),stk2(1010);
-int result[2010];
-int *values,n;
-
-
-bool dfs(int nowPos,int nowDoing,int nowOptPos) {
-    if(nowPos == n) {
-        while(true) {
-            if(!stk1.isEmpty() && stk1.top() == nowDoing) {
-                result[nowOptPos++] = 1;
-                nowDoing++;
-                stk1.pop();
-            }else if(!stk2.isEmpty() && stk2.top() == nowDoing) {
-                result[nowOptPos++] = 3;
-                nowDoing++;
-                stk2.pop();
-            }else {
-                break;
-            }
+bool dfs(int now) {
+    for(int i = graph.heads[now];i != -1;i = graph.edges[i].next) {
+        Graph::Edge &tmpEdge = graph.edges[i];
+        if(color[tmpEdge.to] != 0) {
+            if(color[tmpEdge.to] == color[now]) return false;
+            continue;
         }
-        return true;
+        if(color[now] == 1) {
+            color[tmpEdge.to] = 2;
+        }else {
+            color[tmpEdge.to] = 1;
+        }
+        bool result = dfs(tmpEdge.to);
+        if(!result) return false;
     }
-    if(stk1.isEmpty() || stk1.top() > values[nowPos]) {
-        int tmpNowOptPos = nowOptPos,tmpNowDoing = nowDoing;
-        result[tmpNowOptPos++] = 0;
-        stk1.push(values[nowPos]);
-        while(!stk1.isEmpty() && stk1.top() == tmpNowDoing) {
-            result[tmpNowOptPos++] = 1;
-            tmpNowDoing++;
-            stk1.pop();
-        }
-        bool result = dfs(nowPos + 1,tmpNowDoing,tmpNowOptPos);
-        if(result) return true;
-        while(tmpNowDoing - 1 >= nowDoing) {
-            stk1.push(tmpNowDoing - 1);
-            tmpNowDoing--;
-        }
-        if(!stk1.isEmpty() && stk1.top() == values[nowPos]) stk1.pop();
-    }
-    if(stk2.isEmpty() || stk2.top() > values[nowPos]) {
-        int tmpNowOptPos = nowOptPos,tmpNowDoing = nowDoing;
-        while(!stk2.isEmpty() && stk2.top() == tmpNowDoing) {
-            result[tmpNowOptPos++] = 3;
-            tmpNowDoing++;
-            stk2.pop();
-        }
-        result[tmpNowOptPos++] = 2;
-        stk2.push(values[nowPos]);
-        bool result = dfs(nowPos + 1,tmpNowDoing,tmpNowOptPos);
-        if(result) return true;
-        stk2.pop();
-        while(tmpNowDoing - 1 >= nowDoing) {
-            stk2.push(tmpNowDoing - 1);
-            tmpNowDoing--;
-        }
-    }
-    return false;
+    return true;
 }
 
 int main() {
-    n = read<int>();
-    if(n <= 10) {
-        values = new int[n];
-        for(int i = 0;i < n;i++) {
-            values[i] = read<int>();
-        }
-        bool solved = dfs(0,1,0);
-        if(solved) {
-            for(int i = 0;i < 2 * n;i++) {
-                printf("%c ",result[i] + 'a');
-            }
-            printf("\n");
-        }else {
-            printf("0\n");
-        }
-    }else {
-        Stack s1(n),s2(n);
-        Queue ans(n * 2 + 1);
-        bool flag = true;
-        int nowDoing = 1;
-        for(int i = 0;i < n;i++) {
-            int tmpValue = read<int>();
-            if(s1.isEmpty()) {
-                s1.push(tmpValue);
-                ans.push(0);
-            }else if(s1.top() > tmpValue) {
-                s1.push(tmpValue);
-                ans.push(0);
-            }else {
-                while(true) {
-                    if(!s2.isEmpty() &&s2.top() == nowDoing) {
-                        ans.push(3);
-                        nowDoing++;
-                        s2.pop();
-                    }else {
-                        break;
-                    }
-                }
-                if(s2.isEmpty()) {
-                    s2.push(tmpValue);
-                    ans.push(2);
-                }else if(s2.top() > tmpValue) {
-                    s2.push(tmpValue);
-                    ans.push(2);
-                }else {
-                    flag = false;
-                    break;
-                }
-            }
-            while(true) {
-                if(!s1.isEmpty() && s1.top() == nowDoing) {
-                    ans.push(1);
-                    nowDoing++;
-                    s1.pop();
-                }else {
-                    break;
-                }
+    int n = read<int>();
+    for(int i = 1;i <= n;i++) {
+        values[i] = read<int>();
+    }
+    minValues[n + 1] = INF;
+    for(int i = n;i >= 1;i--) {
+        minValues[i] = min(minValues[i + 1],values[i]);
+    }
+    for(int i = 1;i <= n;i++) {
+        for(int j = i + 1;j <= n;j++) {
+            if(values[i] < values[j] && values[i] > minValues[j + 1]) {
+                graph.addEdge(i,j);
+                graph.addEdge(j,i);
             }
         }
-        while(true) {
-            if(!s1.isEmpty() && s1.top() == nowDoing) {
-                ans.push(1);
-                nowDoing++;
-                s1.pop();
-            }else if(!s2.isEmpty() && s2.top() == nowDoing) {
-                ans.push(3);
-                nowDoing++;
-                s2.pop();
-            }else {
-                if(nowDoing != n + 1) flag = false;
+    }
+    bool flag = false;
+    for(int i = 1;i <= n;i++) {
+        if(color[i] == 0) {
+            color[i] = 1;
+            if(!dfs(i)) {
+                flag = true;
                 break;
             }
         }
-        if(flag) {
-            while(!ans.isEmpty()) {
-                printf("%c ",ans.front() + 'a');
-                ans.pop();
-            }
-            printf("\n");
+    }
+    if(flag) {
+        printf("0\n");
+        return 0;
+    }
+    int nowIndex = 1;
+    stack<int> stk[3];
+    for(int i = 1;i <= n;i++) {
+        stk[color[i]].push(values[i]);
+        if(color[i] == 1) {
+            printf("a ");
         }else {
-            printf("0\n");
+            printf("c ");
+        }
+        for(int j = 1;j <= 2;j++) {
+            while(!stk[j].empty() && stk[j].top() == nowIndex) {
+                stk[j].pop();
+                nowIndex++;
+                if(j == 1) {
+                    printf("b ");
+                }else {
+                    printf("d ");
+                }
+            }
         }
     }
+    for(int i = 1;i <= 2;i++) {
+        while(!stk[i].empty()) {
+            stk[i].pop();
+            if(i == 1) {
+                printf("b ");
+            }else {
+                printf("d ");
+            }
+        }
+    }
+    printf("\n");
     return 0;
 }
